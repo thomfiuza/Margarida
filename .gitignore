@@ -1,0 +1,24 @@
+# Android
+build/
+.gradle/
+.idea/
+local.properties
+*.apk
+*.iml
+captures/
+.externalNativeBuild/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# geral
+.DS_Store
+*.log
+
+# jar de testes é regenerável (veja app-android/README.md)
+core-testes.jar
+
+# cache do compilador Kotlin (regeneravel)
+.kotlin/

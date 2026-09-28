@@ -1,0 +1,47 @@
+{
+  "fonte": "Urine Color Chart (Armstrong), imagem pública hprc-online.org",
+  "metodo": "média RGB do interior de cada faixa da carta, detectada por saturação",
+  "valores_rgb": {
+    "1": [
+      242,
+      242,
+      215
+    ],
+    "2": [
+      244,
+      243,
+      198
+    ],
+    "3": [
+      235,
+      235,
+      175
+    ],
+    "4": [
+      233,
+      231,
+      85
+    ],
+    "5": [
+      239,
+      236,
+      134
+    ],
+    "6": [
+      231,
+      228,
+      92
+    ],
+    "7": [
+      236,
+      216,
+      92
+    ],
+    "8": [
+      179,
+      179,
+      117
+    ]
+  },
+  "ressalva": "renderização digital da carta; calibrar contra amostras reais antes de uso sério"
+}
