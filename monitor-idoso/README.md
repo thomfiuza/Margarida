@@ -25,7 +25,7 @@ Fluxo único guiado por voz que combina:
 - **orquestrador** (`orquestrador.py`): rotina + noite + SOS + sensores +
   inatividade convergem num diário único de eventos — é o núcleo de negócio
   do app Android (ver `especificacao_android.md`); paridade Kotlin testada em
-  `../app-android/core/` (8/8).
+  `../app-android/core/` (12/12).
 
 ## Rodar
 

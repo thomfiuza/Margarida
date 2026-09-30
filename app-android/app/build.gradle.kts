@@ -32,4 +32,9 @@ dependencies {
     implementation("ai.picovoice:porcupine-android:3.0.2")
     // Rota A do SOS (backend Twilio):
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    // Rotina por voz: pulso pela câmera sem preview (rPPG)
+    val camerax = "1.3.4"
+    implementation("androidx.camera:camera-core:$camerax")
+    implementation("androidx.camera:camera-camera2:$camerax")
+    implementation("androidx.camera:camera-lifecycle:$camerax")
 }

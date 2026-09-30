@@ -1,29 +1,43 @@
 package br.com.monitoridoso
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
 /**
- * MODO CUIDADOR — painel do diário + botão da rotina diária.
- *
- * MVP: mostra o resumo do dia e os eventos. A rotina guiada por voz entra na
- * semana 3–4 do cronograma (especificacao_android.md, seção 10): os 9 MP3 já
- * gravados vão em app/src/main/res/raw/, a câmera chama as engines rPPG/urina
- * (Chaquopy) e o resultado vira monitor.registrarRotina(...).
+ * MODO CUIDADOR — painel do diário + ROTINA GUIADA POR VOZ (Estação 7).
+ * O botão "Iniciar rotina guiada" liga o CondutorRotina: TTS fala,
+ * microfone escuta, câmera mede o pulso e o diário registra.
  */
 class CuidadorActivity : AppCompatActivity() {
+
+    private var condutor: CondutorRotina? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val monitor = MainActivity.monitor(this)
+
+        for (p in arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)) {
+            if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED)
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO),
+                    2
+                )
+        }
 
         val resumo = monitor.resumoDoDia()
         val eventos = monitor.diario.todos().takeLast(20).reversed()
 
         val txt = TextView(this).apply {
             textSize = 16f
-            setPadding(32, 64, 32, 32)
+            setPadding(32, 48, 32, 16)
             text = buildString {
                 appendLine(resumo["texto"] as String)
                 appendLine()
@@ -38,6 +52,35 @@ class CuidadorActivity : AppCompatActivity() {
                 }
             }
         }
-        setContentView(android.widget.ScrollView(this).apply { addView(txt) })
+
+        val status = TextView(this).apply {
+            textSize = 20f
+            setPadding(32, 16, 32, 16)
+            text = ""
+        }
+
+        val botao = Button(this).apply {
+            text = "▶ Iniciar rotina guiada por voz"
+            textSize = 20f
+            minimumHeight = 160
+            setOnClickListener {
+                text = "Rotina em andamento..."
+                condutor = CondutorRotina(this@CuidadorActivity, monitor, status).also {
+                    it.iniciar()
+                }
+            }
+        }
+
+        setContentView(android.widget.ScrollView(this).apply {
+            addView(LinearLayout(this@CuidadorActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(txt); addView(status); addView(botao)
+            })
+        })
+    }
+
+    override fun onDestroy() {
+        condutor?.destruir()
+        super.onDestroy()
     }
 }

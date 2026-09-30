@@ -20,7 +20,7 @@ desenvolvimento).
 | Rotina por voz: FC pela câmera (rPPG), ortostática sentada→pé, urina com cartão de cor | `monitor-idoso/` (Python) | ✅ 17/17 testes |
 | Regras de sensores de casa (radar de queda estilo FALLR1, gás, porta, remédio) e inatividade da manhã | `monitor-idoso/sensores.py` + `app-android/core` | ✅ testado nas duas linguagens |
 | Noite: FC/FR sob o colchão (BCG) + saída do leito | `monitor-idoso/bcg_noturno.py` | ✅ DSP testado (hardware = v2) |
-| Núcleo de negócio do app (diário de eventos, regras, contratos JSON) | `app-android/core/` (Kotlin/JVM) | ✅ 8/8 testes JVM |
+| Núcleo de negócio do app (diário de eventos, regras, contratos JSON) | `app-android/core/` (Kotlin/JVM) | ✅ 19/19 testes JVM |
 
 ## Rodar os testes
 
@@ -30,7 +30,7 @@ cd monitor-idoso && python3 verificar_tudo.py     # 19/19 itens
 
 # Núcleo Kotlin (qualquer JDK 11+ e kotlinc)
 cd app-android && kotlinc core/src/main/kotlin/*.kt core/src/test/kotlin/TestesCore.kt \
-    -include-runtime -d core-testes.jar && java -jar core-testes.jar   # 8/8
+    -include-runtime -d core-testes.jar && java -jar core-testes.jar   # 19/19
 ```
 
 ## Compilar o app
