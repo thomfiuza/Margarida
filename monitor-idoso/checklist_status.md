@@ -20,7 +20,7 @@ Gerado com `python3 verificar_tudo.py` (roda todas as suítes e checa arquivos).
 | 15 | Camada de sensores (queda estilo FALLR1, gás, porta/deambulação, remédio, saída do leito pelo pad) | `sensores.py` | 6/6 |
 | 16 | Inatividade da manhã (rotina não feita até 10h → alerta; 1/dia; só software) | `orquestrador.py` | no 7/7 |
 | 17 | Mapa mundial de queda/sensores (Mindêllo, Vayyar, long-lie, 6 tecnologias) | `margarida_mapa_mundial.md` | — |
-| 18 | Paridade Kotlin do núcleo (sensores + inatividade no core do app) | `app-android/core/` | 19/19 JVM |
+| 18 | Paridade Kotlin do núcleo (sensores + inatividade no core do app) | `app-android/core/` | 21/21 JVM |
 | 19 | **App instalado e SOS testado em celular REAL (S23): 2 ligações + SMS com mapa, tela estável** | celular do usuário | ✔ 28/09/2026 |
 | 20 | Identidade visual (logo+paleta), posts LinkedIn/Instagram, versão pública p/ GitHub (sem dados pessoais) + guia | `identidade-margarida/`, `divulgacao/`, `publicar-margarida/` | ✅ pronto |
 | 21 | **Repositório público no ar: github.com/thomfiuza/Margarida (commit dad39e5, 81 arquivos, main)** | GitHub | ✔ 28/09/2026 |

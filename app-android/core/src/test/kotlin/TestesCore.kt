@@ -312,6 +312,41 @@ private fun testPulsoRppg() {
     println("  Pulso rPPG: 80 e 120 bpm medidos; reta/curto/fora da faixa = null ✔")
 }
 
+private fun testIntegracaoParceiro() {
+    // app parceiro confiável vira fonte PARCEIRO, disparo direto (sem pergunta)
+    val ok = Integracao.validar(
+        PedidoSosParceiro("app-historico-mariana", true, "SOS acionado na tela do parceiro")
+    )
+    check(ok == FonteSos.PARCEIRO) { "parceiro confiavel devia virar PARCEIRO" }
+    check(!PlanoSos.requerConfirmacao(FonteSos.PARCEIRO)) { "PARCEIRO nao pede confirmacao" }
+    // app desconhecido ou não identificado é barrado na porta
+    check(Integracao.validar(PedidoSosParceiro("app-qualquer", false)) == null)
+    check(Integracao.validar(PedidoSosParceiro("   ", true)) == null)
+    // histórico exportado é JSON local com tudo que está no diário
+    val m = novoMonitor("integracao")
+    m.registrarRotina(72.0, 78.0, 3, false)
+    val hist = Integracao.historicoJson(m.diario)
+    check(hist.startsWith("[") && hist.endsWith("]")) { "historico deve ser array JSON" }
+    check(hist.contains("rotina")) { "historico deve conter o evento registrado" }
+    println("  Integração: SOS parceiro sem confirmação, desconhecido barrado, histórico local ✔")
+}
+
+private fun testResumoSemana() {
+    val m = novoMonitor("resumo_semana")
+    m.registrarRotina(70.0, 74.0, 2, false)              // rotina tranquila
+    m.registrarRotina(75.0, 100.0, 5, true)             // rotina com atenção
+    m.registrarNoite(66.0, 14.0, mapOf("ok" to true))   // noite tranquila
+    val antigo = Evento("rotina", Nivel.NENHUM, "fora da janela",
+        quando = java.time.LocalDateTime.now().minusDays(10).withNano(0).toString())
+    m.diario.registrar(antigo)                          // não deve entrar no resumo
+    val r = ResumoSemana.gerar(m.diario, 7)
+    check(r.contains("nenhum SOS")) { "resumo: $r" }
+    check(r.contains("Rotinas: 1") && r.contains("1 com ponto de atencao")) { "resumo: $r" }
+    check(r.contains("Noites: 1")) { "resumo: $r" }
+    check(!r.contains("fora da janela")) { "evento antigo nao pode entrar no resumo" }
+    println("  Resumo semanal: 100% local, janela de 7 dias, texto humano ✔")
+}
+
 fun main() {
     TMP.mkdirs()
     val testes: List<Pair<String, () -> Unit>> = listOf(
@@ -333,7 +368,9 @@ fun main() {
         "testFontesSos" to ::testFontesSos,
         "testSamuPrioridade" to ::testSamuPrioridade,
         "testRotinaSimplificadaAlzheimer" to ::testRotinaSimplificadaAlzheimer,
-        "testPulsoRppg" to ::testPulsoRppg
+        "testPulsoRppg" to ::testPulsoRppg,
+        "testIntegracaoParceiro" to ::testIntegracaoParceiro,
+        "testResumoSemana" to ::testResumoSemana
     )
     var falhas = 0
     for ((nome, t) in testes) {

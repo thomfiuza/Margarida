@@ -108,7 +108,7 @@ problema de desempenho. Nunca reescrever a matemática validada às pressas.
 
 Os eventos dos sensores de prateleira (radar de queda FALLR1-like, contato de
 porta, gás, armário de remédio) chegam ao app via bridge Matter/Tuya e caem em
-`decidirEvento()` (já portado e testado no `core/`, 19/19):
+`decidirEvento()` (já portado e testado no `core/`, 21/21):
 
 - **queda** confirmada (imóvel ≥ 15 s, janela 5–90 s do FALLR1) → dispara o
   MESMO SOS sequencial com contexto de saúde;
