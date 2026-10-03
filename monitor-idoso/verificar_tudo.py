@@ -25,8 +25,10 @@ SUITES = [
     ("Botão de pânico — SOS (5 testes)", ROOT, [sys.executable, "testes_panico.py"]),
     ("Orquestrador — jornada completa (7 testes)", ROOT, [sys.executable, "testes_orquestrador.py"]),
     ("Sensores — queda/gás/porta/remédio/leito (6 testes)", ROOT, [sys.executable, "testes_sensores.py"]),
+    ("Ponte Tuya/Matter", ROOT, [sys.executable, "testes_ponte.py"]),
+    ("Pad BCG — quadro ADXL345", ROOT, [sys.executable, "testes_pad.py"]),
     ("Validador de dataset (--selftest)", ROOT, [sys.executable, "validar_dataset.py", "--selftest"]),
-    ("Núcleo Kotlin do app Android (8 testes JVM)", ROOT.parent / "app-android",
+    ("Núcleo Kotlin do app Android", ROOT.parent / "app-android",
      ["java", "-Dfile.encoding=UTF-8", "-jar", "core-testes.jar"]),
 ]
 

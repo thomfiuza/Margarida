@@ -20,17 +20,17 @@ desenvolvimento).
 | Rotina por voz: FC pela câmera (rPPG), ortostática sentada→pé, urina com cartão de cor | `monitor-idoso/` (Python) | ✅ 17/17 testes |
 | Regras de sensores de casa (radar de queda estilo FALLR1, gás, porta, remédio) e inatividade da manhã | `monitor-idoso/sensores.py` + `app-android/core` | ✅ testado nas duas linguagens |
 | Noite: FC/FR sob o colchão (BCG) + saída do leito | `monitor-idoso/bcg_noturno.py` | ✅ DSP testado (hardware = v2) |
-| Núcleo de negócio do app (diário de eventos, regras, contratos JSON) | `app-android/core/` (Kotlin/JVM) | ✅ 19/19 testes JVM |
+| Núcleo de negócio do app (diário de eventos, regras, contratos JSON) | `app-android/core/` (Kotlin/JVM) | ✅ 13/13 testes JVM |
 
 ## Rodar os testes
 
 ```bash
 # Python (3.9+; precisa de numpy e opencv-python)
-cd monitor-idoso && python3 verificar_tudo.py     # 19/19 itens
+cd monitor-idoso && python3 verificar_tudo.py
 
 # Núcleo Kotlin (qualquer JDK 11+ e kotlinc)
 cd app-android && kotlinc core/src/main/kotlin/*.kt core/src/test/kotlin/TestesCore.kt \
-    -include-runtime -d core-testes.jar && java -jar core-testes.jar   # 19/19
+    -include-runtime -d core-testes.jar && java -jar core-testes.jar   # 13/13
 ```
 
 ## Compilar o app
@@ -51,11 +51,11 @@ completo em português leigo.
 ## Roadmap
 
 1. ✅ MVP SOS (testado em aparelho real);
-2. 🔨 Wake word "socorro" (Porcupine pt-BR);
-3. 🔨 Rotina por voz dentro do APK;
-4. 🔨 Integração de sensores Matter/Tuya (radar de queda, porta, gás);
-5. 🔲 Pad noturno BCG (hardware próprio);
-6. 🔲 Piloto com cuidadores + validação.
+2. 🔨 Wake word "socorro": confirmação de 10 s testada no núcleo; sem a AccessKey, o reconhecedor do sistema escuta "socorro". Porcupine pt-BR (chave + `socorro_pt.ppn`) segue sendo o modo 24/7 de baixa bateria;
+3. 🔨 Rotina por voz no APK: o fluxo está na Activity; sem os MP3, o TTS lê as 9 falas. Falta gravar os áudios e repetir no aparelho;
+4. 🔨 Sensores: ponte Tuya/Matter (JSON) testada em Kotlin e Python. O celular recebe `br.com.monitoridoso.EVENTO_SENSOR` com o código da casa. Falta o sensor físico na casa;
+5. 🔲 Pad noturno: quadro ADXL345 (ESP32) testado; o DSP roda ao juntar 120 s (`QUADRO_PAD`). O hardware próprio continua v2;
+6. 🔲 Piloto com cuidadores: plano de CEP pronto e o app exporta o diário. Falta o comitê e as pessoas.
 
 ## Licença
 

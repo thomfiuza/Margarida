@@ -18,6 +18,11 @@ class Diario(val path: File) {
         val evs = todos().filter { it.tipo == tipo }
         return if (n != null) evs.takeLast(n) else evs
     }
+
+    fun temRotinaHoje(): Boolean {
+        val hoje = LocalDate.now().toString()
+        return doTipo("rotina").any { it.quando.startsWith(hoje) }
+    }
 }
 
 /**
@@ -37,7 +42,8 @@ class MonitorIdosoCore(
         fcRepouso: Double, fcPe: Double, urina: Int?, tontura: Boolean,
         avisosUrina: List<String> = emptyList()
     ): Evento {
-        val avisos = avaliarOrtostatica(fcRepouso, fcPe, tontura) + avisosUrina
+        val tendencias = tendenciasRotina(diario.doTipo("rotina"), fcRepouso, urina)
+        val avisos = avaliarOrtostatica(fcRepouso, fcPe, tontura) + avisosUrina + tendencias
         val nivel = nivelAlerta(avisos, urina)
         val msg = if (avisos.isEmpty())
             "Rotina ok: FC repouso ${fcRepouso.toInt()} bpm, em pé ${fcPe.toInt()} bpm" +

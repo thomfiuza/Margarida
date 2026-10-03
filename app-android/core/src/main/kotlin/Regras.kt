@@ -23,6 +23,30 @@ fun avaliarOrtostatica(fcRepouso: Double, fcPe: Double, tontura: Boolean): List<
     return avisos
 }
 
+/**
+ * Tendências contra a linha de base pessoal — espelho de fluxo_idoso.py (últimos 7 FC,
+ * últimos 3 níveis de urina), calculado ANTES de registrar o dia atual.
+ */
+fun tendenciasRotina(rotinasAnteriores: List<Evento>, fcRepouso: Double, urina: Int?): List<String> {
+    val tendencia = mutableListOf<String>()
+    val baseFc = rotinasAnteriores.takeLast(7).mapNotNull { ev ->
+        (ev.dados["fc_repouso"] as? Number)?.toDouble()
+    }
+    if (baseFc.isNotEmpty() && fcRepouso - baseFc.average() >= 10) {
+        val delta = (fcRepouso - baseFc.average()).toInt()
+        tendencia.add("FC de repouso $delta bpm acima da sua média recente.")
+    }
+    if (urina != null) {
+        val prev = rotinasAnteriores.takeLast(3).mapNotNull { ev ->
+            (ev.dados["urina"] as? Number)?.toInt()
+        }
+        if (prev.isNotEmpty() && urina - prev.average() >= 2) {
+            tendencia.add("Urina bem mais escura que nos últimos registros.")
+        }
+    }
+    return tendencia
+}
+
 fun nivelAlerta(avisos: List<String>, nivelUrina: Int?): Nivel {
     val urgente = avisos.any { it.contains("hipotensão ortostática") || it.contains("médico") } ||
         (nivelUrina != null && nivelUrina >= 7)

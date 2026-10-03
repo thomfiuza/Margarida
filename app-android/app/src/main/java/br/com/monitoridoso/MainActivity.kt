@@ -1,44 +1,41 @@
 package br.com.monitoridoso
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import br.com.monitoridoso.core.Contato
-import br.com.monitoridoso.core.MonitorIdosoCore
-import java.io.File
+import androidx.core.content.ContextCompat
 
 /**
  * Tela inicial — dois modos, botões grandes (mínimo 64dp de altura):
  *  MODO IDOSO   -> SOS (wake word + botão vermelho)
  *  MODO CUIDADOR-> rotina guiada por voz + painel do diário
- *
- * MVP: layout em código para manter o esqueleto enxuto; o dev substitui por
- * XML/Compose à vontade — a lógica vive em :core e nas Activities.
  */
 class MainActivity : AppCompatActivity() {
 
-    companion object {
-        // Em produção: tela de cadastro grava isso em Room (contrato em
-        // especificacao_android.md, seção 7).
-        fun monitor(app: android.content.Context): MonitorIdosoCore = MonitorIdosoCore(
-            nome = "Usuario de Teste",
-            contatos = listOf(
-                Contato("Contato A", "+5511900000001"),
-                Contato("Contato B", "+5511900000002")
-            ),
-            diarioPath = File(app.filesDir, "diario.jsonl")
-        )
-    }
+    private val pedirAudio = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { iniciarWake() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val ctx = this
+        val store = PerfilStore(this)
+        if (!store.configurado()) {
+            startActivity(Intent(this, CadastroActivity::class.java))
+            finish()
+            return
+        }
+        RotinaNotificacoesScheduler.agendar(this)
 
+        val ctx = this
         val titulo = TextView(this).apply {
-            text = "Margarida"
+            text = "Margarida — ${store.nomeIdoso()}"
             textSize = 28f
             setPadding(32, 64, 32, 32)
         }
@@ -60,13 +57,24 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(ctx, CuidadorActivity::class.java))
             }
         }
+        val btnConfig = Button(this).apply {
+            text = "Ajustar cadastro"
+            setOnClickListener { startActivity(Intent(ctx, CadastroActivity::class.java)) }
+        }
         setContentView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            addView(titulo); addView(btnIdoso); addView(btnCuidador)
+            addView(titulo); addView(btnIdoso); addView(btnCuidador); addView(btnConfig)
         })
 
-        // wake word sempre ativa enquanto o app vive — blindado: se o serviço
-        // não puder subir (Android rigoroso), a tela e o botão seguem vivos.
+        val faltam = mutableListOf(Manifest.permission.RECORD_AUDIO)
+        if (Build.VERSION.SDK_INT >= 33) faltam.add(Manifest.permission.POST_NOTIFICATIONS)
+        val pedir = faltam.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (pedir.isEmpty()) iniciarWake() else pedirAudio.launch(pedir.toTypedArray())
+    }
+
+    private fun iniciarWake() {
         try {
             startForegroundService(Intent(this, WakeWordService::class.java))
         } catch (e: Exception) {

@@ -6,7 +6,7 @@ Especificação completa: `../monitor-idoso/especificacao_android.md`.
 
 ```
 core/    Kotlin/JVM PURO — regras clínicas, SOS, diário, JSON.
-         COMPILADO E TESTADO no servidor (kotlinc 2.0.21 + JVM 11): 5/5.
+         COMPILADO E TESTADO (kotlinc 2.0.21 + JVM 17): 13/13.
          O mesmo contrato de Evento do protótipo Python (mesmo JSONL).
 app/     Casca Android — Activities, wake word, gateways de chamada/SMS.
          Escrito, mas NÃO COMPILADO aqui (sandbox sem Android SDK/emulador).
@@ -35,10 +35,14 @@ java -Dfile.encoding=UTF-8 -jar core-testes.jar     # 5/5
 
 | Item | Estado |
 |---|---|
-| `core/` (SOS + regras + diário + JSON) | ✅ compilado e 5/5 testes JVM |
+| `core/` (SOS + regras + diário + JSON + ponte + pad) | ✅ compilado e 13/13 testes JVM |
 | Paridade core Kotlin ↔ protótipo Python | ✅ textos e limiares idênticos; testes espelhados |
 | `app/` (Activities, manifest, Gradle, serviços) | ✅ compilado no PC do usuário (BUILD SUCCESSFUL, AGP 8.5 + Gradle 8.10 + JDK 17) |
 | SOS em aparelho real (S23) | ✅ 28/09/2026: 2 ligações sequenciais + SMS com mapa, tela estável |
-| Wake word no aparelho real | 🔨 precisa AccessKey Picovoice + teste em campo |
-| Rotina por voz no app (câmera/MP3) | 🔨 semana 3–4 do cronograma da especificação |
+| Wake word no aparelho real | 🔨 confirmação de 10 s no núcleo; sem AccessKey usa o reconhecedor do sistema. Porcupine pede a chave + `socorro_pt.ppn` |
+| Rotina por voz no app (MP3 ou TTS + rPPG/urina via Chaquopy) | 🔨 implementado — sem os MP3, o TTS lê as falas. Testar no aparelho |
+| Ponte Tuya/Matter (`EVENTO_SENSOR` + código da casa) | 🔨 regras testadas; falta o sensor físico |
+| Pad BCG (quadro ADXL → DSP após 120 s) | 🔲 protocolo testado; hardware v2 |
+| Cadastro + lembrete matinal (6–9h) + inatividade 10h | 🔨 implementado |
+| Tendências FC/urina vs linha de base (`:core`) | 🔨 implementado |
 | Publicação Play Store | 🔨 conta de dev Google (US$ 25, única vez) + assinatura |

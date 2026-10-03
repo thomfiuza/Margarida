@@ -16,10 +16,10 @@ Travou? Copie a mensagem de erro EXATA (ou print) e me mande. Eu corrijo daqui.
 - [ ] Paciência: a primeira compilação demora e pode dar erro. É normal.
       Erro não é fracasso — é informação, e eu leio ela com você.
 
-**Honestidade sobre o primeiro APK:** ele terá o **botão SOCORRO funcionando**
-(ligações em sequência + SMS com localização) e o **painel do cuidador** com o
-diário. A rotina de medição por voz/câmera entra na rodada seguinte — sem
-pular etapas, é assim que se constrói.
+**O que o APK traz agora:** cadastro (nome + contatos), **rotina da manhã**
+(voz + vídeo rPPG + foto de urina via Chaquopy), **SOS** (ligações + SMS),
+painel do cuidador e alerta de **inatividade** se a rotina não for feita até 10h.
+A primeira compilação com Chaquopy baixa numpy/OpenCV — pode levar **20–40 min**.
 
 ---
 

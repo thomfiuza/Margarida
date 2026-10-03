@@ -20,7 +20,7 @@ decisões (nivel, acao, mensagem). Testável 100%.
 """
 from __future__ import annotations
 
-import numpy as np
+# numpy só entra em detectar_saida_leito — as regras de evento rodam sem ele.
 
 # ---- tipos de evento (contrato com a ponte Matter/Tuya no app Android) ----
 QUEDA = "queda"
@@ -82,14 +82,17 @@ def decidir_evento(tipo: str, payload: dict, hora: int) -> tuple[str, str, str]:
     return ("nenhum", "registrar", f"Evento desconhecido: {tipo}.")
 
 
-def detectar_saida_leito(sinal: np.ndarray, fs: float = 100.0,
+def detectar_saida_leito(sinal, fs: float = 100.0,
                          janela_s: float = 20.0) -> dict:
     """Acha os trechos de SILÊNCIO (sem batimento nem respiração) num sinal de
     pad: é assim que o colchão 'vê' a pessoa levantar.
 
     Retorna {'silencios': [(t_ini_s, t_fim_s), ...], 'maior_silencio_s': float}.
-    Silêncio = energia da janela < 5% da energia mediana do sinal inteiro.
+    Silêncio = energia da janela < 5% da energia máxima do sinal inteiro.
     """
+    import numpy as np
+
+    sinal = np.asarray(sinal, dtype=float)
     n = int(janela_s * fs)
     if len(sinal) < n * 2:
         return {"silencios": [], "maior_silencio_s": 0.0}

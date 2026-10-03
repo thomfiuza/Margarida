@@ -13,8 +13,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <application
+        android:name=".MargaridaApp"
         android:label="Margarida"
         android:theme="@style/Theme.AppCompat.DayNight">
 
@@ -25,12 +28,43 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".CadastroActivity" android:exported="false" />
+
         <activity android:name=".SosActivity"
             android:exported="false"
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
         <activity android:name=".CuidadorActivity" android:exported="false" />
+        <activity android:name=".RotinaActivity" android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- casa: Home Assistant / Tasker. O JSON traz o token da casa. -->
+        <receiver
+            android:name=".SensorEventReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="br.com.monitoridoso.EVENTO_SENSOR" />
+                <action android:name="br.com.monitoridoso.QUADRO_PAD" />
+            </intent-filter>
+        </receiver>
 
         <!-- wake word 24/7 -->
         <service android:name=".WakeWordService"
