@@ -61,7 +61,7 @@ seguro — e é o que este mapa propõe.
 | Gás → SOS; porta na janela de sono → deambulação; remédio esquecido | ✅ idem (regras idênticas nas duas linguagens) |
 | Saída do leito pelo pad (silêncio do BCG) | ✅ `sensores.detectar_saida_leito` (detecta cama vazia em sinal sintético) |
 | Inatividade da manhã (só software, conceito Envoy/Nomo) | ✅ `orquestrador.checar_inatividade` (1 alerta/dia até 10h) |
-| Queda confirmada dispara o SOS sequencial com contexto de saúde | ✅ ponta a ponta, testado em Python (7/7) e Kotlin (8/8) |
+| Queda confirmada dispara o SOS sequencial com contexto de saúde | ✅ ponta a ponta, testado em Python (7/7) e Kotlin (26/26) |
 | Ponte Matter/Tuya no app + sensores físicos na casa | 🔨 v1.5 (precisa hardware de prateleira + casa real) |
 | Pad BCG físico sob o colchão | 🔨 v2 (DSP pronto) |
 

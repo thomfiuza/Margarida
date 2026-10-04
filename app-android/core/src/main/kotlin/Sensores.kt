@@ -50,6 +50,17 @@ fun decidirEvento(tipo: String, payload: Map<String, Any?>, hora: Int): DecisaoS
             else DecisaoSensor(Nivel.NENHUM, "registrar",
                 "Saída do leito (${minutos.toInt()} min).")
         }
+        // Mamoriko (JP): a geladeira é o sensor de rotina mais barato da casa —
+        // quem come, abre a geladeira. 3 janelas por dia (8h/14h/20h).
+        "geladeira" -> {
+            val horasSem = (payload["horas_sem_abrir"] as? Number)?.toDouble() ?: 0.0
+            if (horasSem >= 6 && hora in 8..20)
+                DecisaoSensor(Nivel.ATENCAO, "notificar",
+                    "Geladeira sem abrir há ${horasSem.toInt()} h — " +
+                        "possível refeição pulada; verificar alimentação.")
+            else DecisaoSensor(Nivel.NENHUM, "registrar",
+                "Geladeira aberta (ritmo normal).")
+        }
         else -> DecisaoSensor(Nivel.NENHUM, "registrar", "Evento desconhecido: $tipo.")
     }
 }
