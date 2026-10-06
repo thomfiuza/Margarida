@@ -74,6 +74,26 @@ class PerfilStore(private val ctx: Context) {
         return novo
     }
 
+    /** Sem confirmação por voz — só para cuidador que aceita mais falso positivo. */
+    fun wakeWordModoDireto(): Boolean = prefs.getBoolean(KEY_WAKE_DIRETO, false)
+
+    fun definirWakeWordModoDireto(ativo: Boolean) {
+        prefs.edit().putBoolean(KEY_WAKE_DIRETO, ativo).apply()
+    }
+
+    /** Pacotes Android autorizados a acionar `margarida://sos` (piloto parceiro). */
+    fun parceirosConfiaveis(): Set<String> =
+        prefs.getString(KEY_PARCEIROS, "")
+            ?.split(',', ';', '\n')
+            ?.map { it.trim() }
+            ?.filter { it.isNotBlank() }
+            ?.toSet()
+            ?: emptySet()
+
+    fun definirParceirosConfiaveis(pacotes: Set<String>) {
+        prefs.edit().putString(KEY_PARCEIROS, pacotes.joinToString(",")).apply()
+    }
+
     fun monitor(): MonitorIdosoCore = MonitorIdosoCore(
         nome = nomeIdoso().ifBlank { "Idoso" },
         contatos = contatos(),
@@ -89,5 +109,7 @@ class PerfilStore(private val ctx: Context) {
         private const val KEY_LEMBRETE_M = "lembrete_minuto"
         private const val KEY_LEMBRETE_DATA = "lembrete_enviado_data"
         private const val KEY_TOKEN = "token_ponte"
+        private const val KEY_WAKE_DIRETO = "wake_modo_direto"
+        private const val KEY_PARCEIROS = "parceiros_confiaveis"
     }
 }

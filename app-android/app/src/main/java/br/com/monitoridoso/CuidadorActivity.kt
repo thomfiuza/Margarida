@@ -3,31 +3,41 @@ package br.com.monitoridoso
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.CheckBox
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import br.com.monitoridoso.core.Integracao
 import br.com.monitoridoso.core.Nivel
+import br.com.monitoridoso.core.ResumoSemana
 import java.io.File
 
 /**
- * MODO CUIDADOR — painel do diário + início da rotina guiada por voz.
+ * MODO CUIDADOR — painel do diário, interoperabilidade e rotina guiada.
  */
 class CuidadorActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val monitor = PerfilStore(this).monitor()
+        val store = PerfilStore(this)
+        val monitor = store.monitor()
 
-        val resumo = monitor.resumoDoDia()
+        val resumoDia = monitor.resumoDoDia()
+        val resumoSemana = ResumoSemana.gerar(monitor.diario, 7)
         val eventos = monitor.diario.todos().takeLast(20).reversed()
 
         val txt = TextView(this).apply {
             textSize = 16f
             setPadding(32, 64, 32, 32)
             text = buildString {
-                appendLine(resumo["texto"] as String)
+                appendLine(resumoDia["texto"] as String)
+                appendLine()
+                appendLine("Resumo 7 dias (local):")
+                appendLine(resumoSemana)
                 appendLine()
                 appendLine("Últimos eventos:")
                 for (e in eventos) {
@@ -42,8 +52,31 @@ class CuidadorActivity : AppCompatActivity() {
         }
         val codigo = TextView(this).apply {
             textSize = 16f
-            setPadding(32, 8, 32, 16)
-            text = "Código da casa (cole no sensor / Home Assistant): ${PerfilStore(this@CuidadorActivity).tokenPonte()}"
+            setPadding(32, 8, 32, 8)
+            text = "Código da casa: ${store.tokenPonte()}"
+        }
+        val parceiros = EditText(this).apply {
+            hint = "Apps parceiros (pacotes, separados por vírgula)"
+            setText(store.parceirosConfiaveis().joinToString(", "))
+            setPadding(32, 8, 32, 8)
+        }
+        val wakeDireto = CheckBox(this).apply {
+            text = "Wake word sem confirmação (modo direto — mais falsos positivos)"
+            isChecked = store.wakeWordModoDireto()
+            setPadding(24, 8, 24, 8)
+        }
+        val btnSalvarPrefs = Button(this).apply {
+            text = "Salvar interoperabilidade"
+            setOnClickListener {
+                val lista = parceiros.text.toString()
+                    .split(',', ';', '\n')
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+                    .toSet()
+                store.definirParceirosConfiaveis(lista)
+                store.definirWakeWordModoDireto(wakeDireto.isChecked)
+                Toast.makeText(this@CuidadorActivity, "Salvo. Reinicie o app para o wake direto.", Toast.LENGTH_SHORT).show()
+            }
         }
         val btnRotina = Button(this).apply {
             text = "Iniciar rotina da manhã"
@@ -53,22 +86,30 @@ class CuidadorActivity : AppCompatActivity() {
                 startActivity(Intent(this@CuidadorActivity, RotinaActivity::class.java))
             }
         }
-        val btnExportar = Button(this).apply {
-            text = "Exportar diário do piloto"
-            textSize = 18f
-            minimumHeight = 120
-            setOnClickListener { exportarDiario() }
+        val btnExportarJsonl = Button(this).apply {
+            text = "Exportar diário (JSONL piloto)"
+            setOnClickListener { exportarJsonl() }
         }
-        setContentView(LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(ScrollView(this@CuidadorActivity).apply { addView(txt) })
-            addView(codigo)
-            addView(btnRotina)
-            addView(btnExportar)
+        val btnExportarParceiro = Button(this).apply {
+            text = "Exportar histórico JSON (parceiro)"
+            setOnClickListener { exportarHistoricoParceiro(monitor) }
+        }
+        setContentView(ScrollView(this).apply {
+            addView(LinearLayout(this@CuidadorActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(txt)
+                addView(codigo)
+                addView(parceiros)
+                addView(wakeDireto)
+                addView(btnSalvarPrefs)
+                addView(btnRotina)
+                addView(btnExportarJsonl)
+                addView(btnExportarParceiro)
+            })
         })
     }
 
-    private fun exportarDiario() {
+    private fun exportarJsonl() {
         val origem = File(filesDir, "diario.jsonl")
         if (!origem.exists()) origem.writeText("")
         val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", origem)
@@ -79,5 +120,19 @@ class CuidadorActivity : AppCompatActivity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         startActivity(Intent.createChooser(enviar, "Exportar diário"))
+    }
+
+    private fun exportarHistoricoParceiro(monitor: br.com.monitoridoso.core.MonitorIdosoCore) {
+        val json = Integracao.historicoJson(monitor.diario)
+        val f = File(cacheDir, "margarida_historico.json")
+        f.writeText(json)
+        val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", f)
+        val enviar = Intent(Intent.ACTION_SEND).apply {
+            type = "application/json"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, "Histórico Margarida")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(enviar, "Exportar histórico"))
     }
 }

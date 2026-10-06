@@ -35,6 +35,21 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
+        <activity android:name=".SosEntradaActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="margarida" android:host="sos" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="br.com.monitoridoso.SOS_PARCEIRO" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <activity android:name=".CuidadorActivity" android:exported="false" />
         <activity android:name=".RotinaActivity" android:exported="false" />
 

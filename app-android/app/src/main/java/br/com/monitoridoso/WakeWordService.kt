@@ -7,9 +7,12 @@ import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
+import br.com.monitoridoso.core.AcaoWake
+import br.com.monitoridoso.core.WakeWordGate
 import br.com.monitoridoso.core.ehWakeWordSocorro
 import java.io.File
 
@@ -17,7 +20,7 @@ import java.io.File
  * Wake word — "SOCORRO" em pt-BR.
  * Com AccessKey + socorro_pt.ppn: Porcupine, offline, baixa potência.
  * Sem a chave: reconhecedor do sistema (EscutaFala), até a chave existir.
- * A confirmação de 10 s acontece na SosActivity, com botão e com a voz.
+ * A confirmação pós wake usa [WakeWordGate] na SosActivity (silêncio = não liga).
  */
 class WakeWordService : LifecycleService() {
 
@@ -43,10 +46,12 @@ class WakeWordService : LifecycleService() {
 
     private var manager: PorcupineManager? = null
     private var escuta: EscutaFala? = null
+    private val gate = WakeWordGate()
 
     override fun onCreate() {
         super.onCreate()
         emExecucao = this
+        gate.modoDireto = PerfilStore(this).wakeWordModoDireto()
         try {
             subirNotificacao(porcupine = false)
         } catch (e: Exception) {
@@ -127,6 +132,17 @@ class WakeWordService : LifecycleService() {
 
     private fun abrirConfirmacao() {
         if (confirmacaoAberta) return
+        val agora = SystemClock.elapsedRealtime()
+        when (gate.aoDetectar(agora)) {
+            AcaoWake.NADA -> return
+            AcaoWake.DISPARAR_SOS -> abrirDisparoDireto()
+            AcaoWake.PERGUNTAR -> abrirConfirmacaoComPergunta()
+            AcaoWake.CANCELAR -> {}
+        }
+    }
+
+    private fun abrirConfirmacaoComPergunta() {
+        if (confirmacaoAberta) return
         confirmacaoAberta = true
         val i = Intent(this, SosActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -136,6 +152,20 @@ class WakeWordService : LifecycleService() {
         } catch (e: Exception) {
             confirmacaoAberta = false
             Log.w("WakeWord", "não abriu a confirmação: ${e.message}")
+        }
+    }
+
+    private fun abrirDisparoDireto() {
+        if (confirmacaoAberta) return
+        confirmacaoAberta = true
+        val i = Intent(this, SosActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .putExtra("VIA_WAKE_DIRETO", true)
+        try {
+            startActivity(i)
+        } catch (e: Exception) {
+            confirmacaoAberta = false
+            Log.w("WakeWord", "não abriu SOS direto: ${e.message}")
         }
     }
 

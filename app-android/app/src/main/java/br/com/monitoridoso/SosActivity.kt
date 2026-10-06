@@ -14,12 +14,11 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import br.com.monitoridoso.core.DecisaoWake
-import br.com.monitoridoso.core.FALA_CONFIRMACAO
-import br.com.monitoridoso.core.JANELA_CONFIRMACAO_MS
+import br.com.monitoridoso.core.AcaoWake
+import br.com.monitoridoso.core.FALA_CONFIRMACAO_WAKE
 import br.com.monitoridoso.core.Json
 import br.com.monitoridoso.core.Localizacao
-import br.com.monitoridoso.core.decidirConfirmacaoSos
+import br.com.monitoridoso.core.WakeWordGate
 import br.com.monitoridoso.core.normalizarEventoSensor
 import br.com.monitoridoso.core.tokenConfere
 import java.util.Calendar
@@ -27,45 +26,57 @@ import java.util.Locale
 import java.util.concurrent.Executors
 
 /**
- * SOS — botão vermelho gigante. Wake word abre a confirmação de 10 s
- * (sem "não", liga mesmo assim). Sensor de queda ou gás dispara direto:
- * a imobilidade do radar já foi a confirmação.
+ * SOS — botão vermelho, wake word (com [WakeWordGate]), sensor de queda/gás
+ * e app parceiro confiável (disparo direto).
  */
 class SosActivity : AppCompatActivity() {
+
+    companion object {
+        const val EXTRA_VIA_PARCEIRO = "VIA_PARCEIRO"
+        const val EXTRA_PARCEIRO_ORIGEM = "PARCEIRO_ORIGEM"
+        const val EXTRA_PARCEIRO_OBS = "PARCEIRO_OBS"
+        private const val JANELA_MS = 6_000L
+    }
 
     private val permissoes = arrayOf(
         Manifest.permission.CALL_PHONE, Manifest.permission.SEND_SMS,
         Manifest.permission.ACCESS_FINE_LOCATION
     )
     private val handler = Handler(Looper.getMainLooper())
-    private val falas = mutableListOf<String>()
+    private val gate = WakeWordGate(janelaMs = JANELA_MS, modoDireto = false)
     private var disparou = false
-    private var inicio = 0L
+    private var inicioJanela = 0L
     private var escuta: EscutaFala? = null
     private var tts: TextToSpeech? = null
     private lateinit var status: TextView
 
     private val tick = object : Runnable {
         override fun run() {
-            if (disparou || isFinishing) return
-            val decorrido = SystemClock.elapsedRealtime() - inicio
-            when (decidirConfirmacaoSos(falas.toList(), decorrido)) {
-                DecisaoWake.CANCELAR -> cancelar()
-                DecisaoWake.DISPARAR -> disparar(status)
-                DecisaoWake.AGUARDAR -> {
-                    val faltam = ((JANELA_CONFIRMACAO_MS - decorrido) / 1000).coerceAtLeast(0)
-                    status.text = "Você chamou ajuda? Ligo em ${faltam} s. Diga não para cancelar."
-                    handler.postDelayed(this, 250)
+            if (disparou || isFinishing || !gate.perguntando) return
+            val agora = SystemClock.elapsedRealtime()
+            if (agora - inicioJanela >= JANELA_MS) {
+                when (gate.aoExpirar(agora)) {
+                    AcaoWake.CANCELAR -> cancelar()
+                    AcaoWake.DISPARAR_SOS -> disparar(status)
+                    else -> {}
                 }
+                return
             }
+            val faltam = ((JANELA_MS - (agora - inicioJanela)) / 1000).coerceAtLeast(0)
+            status.text =
+                "Confirme com sim ou diga não. Silêncio cancela. Tempo: ${faltam}s."
+            handler.postDelayed(this, 250)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        gate.modoDireto = PerfilStore(this).wakeWordModoDireto()
         val viaWake = intent.getBooleanExtra("VIA_WAKE_WORD", false)
+        val viaWakeDireto = intent.getBooleanExtra("VIA_WAKE_DIRETO", false)
         val viaSensor = intent.getBooleanExtra("VIA_SENSOR", false)
-        if (viaWake) WakeWordService.confirmacaoAberta = true
+        val viaParceiro = intent.getBooleanExtra(EXTRA_VIA_PARCEIRO, false)
+        if (viaWake || viaWakeDireto) WakeWordService.confirmacaoAberta = true
 
         status = TextView(this).apply {
             text = "Toque no botão para chamar ajuda."
@@ -96,16 +107,25 @@ class SosActivity : AppCompatActivity() {
         }
 
         when {
+            viaParceiro -> {
+                botao.setOnClickListener { disparar(status) }
+                status.text = "SOS do app parceiro. Ligando..."
+                dispararParceiro(status)
+            }
             viaSensor -> {
                 botao.setOnClickListener { dispararSensor(status) }
                 dispararSensor(status)
+            }
+            viaWakeDireto -> {
+                status.text = "Socorro detectado (modo direto). Ligando..."
+                disparar(status)
             }
             viaWake -> {
                 botao.text = "Ligar agora"
                 botao.setOnClickListener { disparar(status) }
                 botaoNao.visibility = android.view.View.VISIBLE
-                botaoNao.setOnClickListener { falas.add("não"); cancelar() }
-                iniciarConfirmacao()
+                botaoNao.setOnClickListener { processarResposta("não") }
+                iniciarConfirmacaoWake()
             }
             else -> botao.setOnClickListener { disparar(status) }
         }
@@ -113,16 +133,15 @@ class SosActivity : AppCompatActivity() {
 
     private var janelaAberta = false
 
-    /** A janela só abre depois da pergunta em voz alta — senão o microfone
-     *  ouve o próprio "não" da frase e cancela o socorro. */
-    private fun iniciarConfirmacao() {
-        status.text = FALA_CONFIRMACAO
+    private fun iniciarConfirmacaoWake() {
+        status.text = FALA_CONFIRMACAO_WAKE
         WakeWordService.pausarDuranteConfirmacao()
         val abrirJanela = Runnable {
             if (disparou || janelaAberta || isFinishing) return@Runnable
             janelaAberta = true
-            inicio = SystemClock.elapsedRealtime()
-            escuta = EscutaFala(this, continuo = true) { texto -> falas.add(texto) }
+            inicioJanela = SystemClock.elapsedRealtime()
+            gate.aoDetectar(inicioJanela)
+            escuta = EscutaFala(this, continuo = true) { texto -> processarResposta(texto) }
             escuta?.iniciar()
             handler.post(tick)
         }
@@ -149,7 +168,16 @@ class SosActivity : AppCompatActivity() {
                     }
                 }
             })
-            tts?.speak(FALA_CONFIRMACAO, TextToSpeech.QUEUE_FLUSH, null, "confirma-sos")
+            tts?.speak(FALA_CONFIRMACAO_WAKE, TextToSpeech.QUEUE_FLUSH, null, "confirma-sos")
+        }
+    }
+
+    private fun processarResposta(texto: String) {
+        if (disparou || !gate.perguntando) return
+        when (gate.aoResponder(texto, SystemClock.elapsedRealtime())) {
+            AcaoWake.DISPARAR_SOS -> disparar(status)
+            AcaoWake.CANCELAR -> cancelar()
+            else -> {}
         }
     }
 
@@ -177,6 +205,23 @@ class SosActivity : AppCompatActivity() {
             val loc: Localizacao? = UltimaLocalizacao.obter(this)
             val ev = monitor.emergencia(loc, chamar, sms)
             runOnUiThread { status.text = ev.mensagem }
+        }
+    }
+
+    private fun dispararParceiro(status: TextView) {
+        if (disparou) return
+        disparou = true
+        val origem = intent.getStringExtra(EXTRA_PARCEIRO_ORIGEM).orEmpty()
+        val obs = intent.getStringExtra(EXTRA_PARCEIRO_OBS).orEmpty()
+        status.text = "Parceiro ($origem). Ligando..."
+        val monitor = PerfilStore(this).monitor()
+        val chamar = GatewayChamadaNativo(this, this)
+        val sms = GatewaySmsAndroid(this)
+        Executors.newSingleThreadExecutor().execute {
+            val loc: Localizacao? = UltimaLocalizacao.obter(this)
+            val ev = monitor.emergencia(loc, chamar, sms)
+            val msg = if (obs.isBlank()) ev.mensagem else "${ev.mensagem} ($obs)"
+            runOnUiThread { status.text = msg }
         }
     }
 
@@ -210,7 +255,9 @@ class SosActivity : AppCompatActivity() {
         handler.removeCallbacks(tick)
         escuta?.parar()
         tts?.shutdown()
-        if (intent.getBooleanExtra("VIA_WAKE_WORD", false)) {
+        if (intent.getBooleanExtra("VIA_WAKE_WORD", false) ||
+            intent.getBooleanExtra("VIA_WAKE_DIRETO", false)
+        ) {
             WakeWordService.confirmacaoAberta = false
             WakeWordService.retomarDepoisDaConfirmacao()
         }

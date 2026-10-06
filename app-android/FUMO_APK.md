@@ -69,6 +69,18 @@ adb shell am broadcast -a br.com.monitoridoso.QUADRO_PAD \
 adb logcat -s WakeWord Margarida python Ponte PadIngestor
 ```
 
+## SOS parceiro (deep link)
+
+1. Modo cuidador → cadastrar pacote (ex. `com.exemplo.historico`).
+2. Testar:
+
+```bash
+adb shell am start -a android.intent.action.VIEW \
+  -d 'margarida://sos?origem=com.exemplo.historico&obs=teste-fumo'
+```
+
+✔ **Passou:** SOS dispara sem confirmação wake; pacote não listado → toast de recusa.
+
 ## Falhas comuns
 
 | Sintoma | Provável causa |

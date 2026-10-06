@@ -14,6 +14,10 @@ package br.com.monitoridoso.core
  */
 enum class AcaoWake { NADA, PERGUNTAR, DISPARAR_SOS, CANCELAR }
 
+/** Pergunta na confirmação pós wake word (silêncio = não liga). */
+const val FALA_CONFIRMACAO_WAKE =
+    "Você pediu socorro? Diga sim para ligar, ou não para cancelar. Se ficar em silêncio, não ligo."
+
 class WakeWordGate(
     private val janelaMs: Long = 6_000,
     private val debounceMs: Long = 10_000,
