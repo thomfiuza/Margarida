@@ -1,0 +1,11 @@
+Modelo Vosk pt-BR (spike bateria / wake word aberta)
+
+1. Baixe: https://alphacephei.com/vosk/models/vosk-model-small-pt-0.3.zip
+2. Descompacte a pasta vosk-model-small-pt-0.3
+3. Copie para o celular:
+   adb push vosk-model-small-pt-0.3 /sdcard/Download/
+   adb shell run-as br.com.monitoridoso cp -r /sdcard/Download/vosk-model-small-pt-0.3 /data/data/br.com.monitoridoso/files/
+
+   (Ou coloque a pasta em app/src/main/assets/vosk-model-small-pt-0.3 antes de compilar — aumenta muito o APK.)
+
+4. Modo cuidador → Motor wake word → VOSK → reinicie o app.

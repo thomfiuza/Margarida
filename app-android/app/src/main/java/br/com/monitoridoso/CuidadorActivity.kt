@@ -7,7 +7,8 @@ import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.TextView
+import android.widget.ArrayAdapter
+import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
@@ -65,8 +66,28 @@ class CuidadorActivity : AppCompatActivity() {
             isChecked = store.wakeWordModoDireto()
             setPadding(24, 8, 24, 8)
         }
+        val rotinaAlzheimer = CheckBox(this).apply {
+            text = "Rotina por voz simplificada (modo Alzheimer — menos perguntas)"
+            isChecked = store.rotinaModoAlzheimer()
+            setPadding(24, 8, 24, 8)
+        }
+        val motorWake = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@CuidadorActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                MotorWake.entries.map {
+                    when (it) {
+                        MotorWake.ESCUTA -> "Wake: reconhecedor do sistema"
+                        MotorWake.PORCUPINE -> "Wake: Porcupine (chave + .ppn)"
+                        MotorWake.VOSK -> "Wake: Vosk pt-BR (spike bateria)"
+                    }
+                }
+            )
+            setSelection(MotorWake.entries.indexOf(store.motorWake()).coerceAtLeast(0))
+            setPadding(32, 8, 32, 8)
+        }
         val btnSalvarPrefs = Button(this).apply {
-            text = "Salvar interoperabilidade"
+            text = "Salvar interoperabilidade e motor wake"
             setOnClickListener {
                 val lista = parceiros.text.toString()
                     .split(',', ';', '\n')
@@ -75,11 +96,25 @@ class CuidadorActivity : AppCompatActivity() {
                     .toSet()
                 store.definirParceirosConfiaveis(lista)
                 store.definirWakeWordModoDireto(wakeDireto.isChecked)
-                Toast.makeText(this@CuidadorActivity, "Salvo. Reinicie o app para o wake direto.", Toast.LENGTH_SHORT).show()
+                store.definirRotinaModoAlzheimer(rotinaAlzheimer.isChecked)
+                store.definirMotorWake(MotorWake.entries[motorWake.selectedItemPosition])
+                Toast.makeText(
+                    this@CuidadorActivity,
+                    "Salvo. Feche e abra o app para aplicar o motor wake.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+        val btnRotinaVoz = Button(this).apply {
+            text = "Rotina por voz (Estação 7 — MaquinaRotina)"
+            textSize = 18f
+            minimumHeight = 140
+            setOnClickListener {
+                startActivity(Intent(this@CuidadorActivity, RotinaVozActivity::class.java))
             }
         }
         val btnRotina = Button(this).apply {
-            text = "Iniciar rotina da manhã"
+            text = "Rotina com vídeo (MP3 + gravação)"
             textSize = 20f
             minimumHeight = 160
             setOnClickListener {
@@ -101,7 +136,10 @@ class CuidadorActivity : AppCompatActivity() {
                 addView(codigo)
                 addView(parceiros)
                 addView(wakeDireto)
+                addView(rotinaAlzheimer)
+                addView(motorWake)
                 addView(btnSalvarPrefs)
+                addView(btnRotinaVoz)
                 addView(btnRotina)
                 addView(btnExportarJsonl)
                 addView(btnExportarParceiro)

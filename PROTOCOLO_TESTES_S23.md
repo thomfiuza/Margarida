@@ -62,6 +62,17 @@ Esperado: SOS direto, sem pergunta wake.
 
 ## 3. Rotina guiada (item 4)
 
+### 3.A Rotina por voz (Estação 7)
+
+Modo cuidador → **Rotina por voz (MaquinaRotina)**. Opcional: marcar **modo Alzheimer** antes.
+
+- [ ] TTS pergunta “começar”; dizer **começar** avança
+- [ ] Medir FC sentado + em pé (botão câmera); valores no resumo falado
+- [ ] Tontura/urina por voz (ou puladas no modo Alzheimer)
+- [ ] Evento **rotina** no diário
+
+### 3.B Rotina com vídeo (legado)
+
 - [ ] MP3 ou TTS em cada passo
 - [ ] Vídeos repouso + em pé → FC calculada
 - [ ] Foto urina → nível ou aviso
@@ -85,11 +96,14 @@ Repetir até ingestor juntar 120 s (ver logcat `PadIngestor`).
 
 Condições fixas: ecrã off, Wi‑Fi on, mesma build.
 
+**Antes de cada linha:** modo cuidador → spinner motor wake → salvar → fechar e abrir app.
+Vosk: instalar modelo (`app-android/app/src/main/assets/vosk/LERME.txt`).
+
 | Motor | Início % | Fim 1 h % | Δ % | Falsos positivos |
 |-------|----------|-----------|-----|------------------|
-| EscutaFala (sem chave Porcupine) | | | | |
-| Porcupine (com chave + .ppn) | | | | |
-| Vosk (se/spike) | | | | |
+| EscutaFala (motor **ESCUTA**) | | | | |
+| Porcupine (motor **PORCUPINE** + chave) | | | | |
+| Vosk (motor **VOSK** + modelo pt) | | | | |
 
 ---
 

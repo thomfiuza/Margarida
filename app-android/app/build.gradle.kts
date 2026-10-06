@@ -44,6 +44,7 @@ dependencies {
     // Wake word offline pt-BR (criar a palavra "socorro" no console da Picovoice
     // e colar a accessKey em WakeWordService.kt):
     implementation("ai.picovoice:porcupine-android:3.0.2")
+    implementation("com.alphacephei:vosk-android:0.3.47")
     // Rota A do SOS (backend Twilio):
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

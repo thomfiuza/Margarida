@@ -94,6 +94,18 @@ class PerfilStore(private val ctx: Context) {
         prefs.edit().putString(KEY_PARCEIROS, pacotes.joinToString(",")).apply()
     }
 
+    fun motorWake(): MotorWake = MotorWake.fromStored(prefs.getString(KEY_MOTOR_WAKE, null))
+
+    fun definirMotorWake(motor: MotorWake) {
+        prefs.edit().putString(KEY_MOTOR_WAKE, motor.name).apply()
+    }
+
+    fun rotinaModoAlzheimer(): Boolean = prefs.getBoolean(KEY_ROTINA_ALZHEIMER, false)
+
+    fun definirRotinaModoAlzheimer(ativo: Boolean) {
+        prefs.edit().putBoolean(KEY_ROTINA_ALZHEIMER, ativo).apply()
+    }
+
     fun monitor(): MonitorIdosoCore = MonitorIdosoCore(
         nome = nomeIdoso().ifBlank { "Idoso" },
         contatos = contatos(),
@@ -111,5 +123,7 @@ class PerfilStore(private val ctx: Context) {
         private const val KEY_TOKEN = "token_ponte"
         private const val KEY_WAKE_DIRETO = "wake_modo_direto"
         private const val KEY_PARCEIROS = "parceiros_confiaveis"
+        private const val KEY_MOTOR_WAKE = "motor_wake"
+        private const val KEY_ROTINA_ALZHEIMER = "rotina_alzheimer"
     }
 }

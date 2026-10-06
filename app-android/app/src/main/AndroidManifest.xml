@@ -52,6 +52,7 @@
 
         <activity android:name=".CuidadorActivity" android:exported="false" />
         <activity android:name=".RotinaActivity" android:exported="false" />
+        <activity android:name=".RotinaVozActivity" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

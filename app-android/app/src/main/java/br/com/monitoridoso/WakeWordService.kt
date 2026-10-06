@@ -17,10 +17,8 @@ import br.com.monitoridoso.core.ehWakeWordSocorro
 import java.io.File
 
 /**
- * Wake word — "SOCORRO" em pt-BR.
- * Com AccessKey + socorro_pt.ppn: Porcupine, offline, baixa potência.
- * Sem a chave: reconhecedor do sistema (EscutaFala), até a chave existir.
- * A confirmação pós wake usa [WakeWordGate] na SosActivity (silêncio = não liga).
+ * Wake word "SOCORRO" — motor escolhido no modo cuidador:
+ * [MotorWake.ESCUTA], [MotorWake.PORCUPINE] ou [MotorWake.VOSK] (spike bateria).
  */
 class WakeWordService : LifecycleService() {
 
@@ -35,36 +33,33 @@ class WakeWordService : LifecycleService() {
         private var emExecucao: WakeWordService? = null
 
         fun pausarDuranteConfirmacao() {
-            emExecucao?.escuta?.parar()
+            emExecucao?.pausarMotores()
         }
 
         fun retomarDepoisDaConfirmacao() {
-            val s = emExecucao ?: return
-            if (s.manager == null) s.iniciarFallback()
+            emExecucao?.retomarMotores()
         }
     }
 
     private var manager: PorcupineManager? = null
     private var escuta: EscutaFala? = null
+    private var vosk: VoskSocorroDetector? = null
     private val gate = WakeWordGate()
+    private var motorAtual: MotorWake = MotorWake.ESCUTA
+    private var ultimoWakeMs = 0L
 
     override fun onCreate() {
         super.onCreate()
         emExecucao = this
         gate.modoDireto = PerfilStore(this).wakeWordModoDireto()
         try {
-            subirNotificacao(porcupine = false)
+            subirNotificacao(MotorWake.ESCUTA)
         } catch (e: Exception) {
             Log.w("WakeWord", "serviço não iniciado: ${e.message}")
             stopSelf()
             return
         }
-        if (ACCESS_KEY.startsWith("COLE_AQUI")) {
-            Log.i("WakeWord", "sem AccessKey — escuta do sistema até colar a chave Porcupine")
-            iniciarFallback()
-            return
-        }
-        if (!iniciarPorcupine()) iniciarFallback()
+        iniciarMotorEscolhido()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -72,17 +67,47 @@ class WakeWordService : LifecycleService() {
         return START_STICKY
     }
 
-    private fun subirNotificacao(porcupine: Boolean) {
+    private fun iniciarMotorEscolhido() {
+        pararMotores()
+        motorAtual = PerfilStore(this).motorWake()
+        when (motorAtual) {
+            MotorWake.VOSK -> {
+                subirNotificacao(MotorWake.VOSK)
+                vosk = VoskSocorroDetector(this) { abrirConfirmacao() }
+                if (vosk?.iniciar() != true) {
+                    Log.w("WakeWord", "Vosk indisponível — caindo para EscutaFala")
+                    motorAtual = MotorWake.ESCUTA
+                    subirNotificacao(MotorWake.ESCUTA)
+                    iniciarFallback()
+                }
+            }
+            MotorWake.PORCUPINE -> {
+                if (ACCESS_KEY.startsWith("COLE_AQUI") || !iniciarPorcupine()) {
+                    Log.i("WakeWord", "Porcupine indisponível — EscutaFala")
+                    motorAtual = MotorWake.ESCUTA
+                    subirNotificacao(MotorWake.ESCUTA)
+                    iniciarFallback()
+                }
+            }
+            MotorWake.ESCUTA -> {
+                subirNotificacao(MotorWake.ESCUTA)
+                iniciarFallback()
+            }
+        }
+    }
+
+    private fun subirNotificacao(motor: MotorWake) {
         if (Build.VERSION.SDK_INT >= 26) {
             val nm = getSystemService(NotificationManager::class.java)
             nm.createNotificationChannel(
                 NotificationChannel(CANAL, "Alertas Margarida", NotificationManager.IMPORTANCE_LOW)
             )
         }
-        val texto = if (porcupine)
-            "Diga SOCORRO em caso de emergência"
-        else
-            "Diga SOCORRO. Cole a chave Porcupine para a escuta de baixa bateria."
+        val texto = when (motor) {
+            MotorWake.PORCUPINE -> "Diga SOCORRO (Porcupine, baixa bateria)"
+            MotorWake.VOSK -> "Diga SOCORRO (Vosk pt-BR — teste bateria)"
+            MotorWake.ESCUTA -> "Diga SOCORRO (reconhecedor do sistema)"
+        }
         val notificacao = NotificationCompat.Builder(this, CANAL)
             .setContentTitle("Margarida ativa")
             .setContentText(texto)
@@ -110,7 +135,8 @@ class WakeWordService : LifecycleService() {
                 .setSensitivity(0.6f)
                 .build(this, callback)
             manager?.start()
-            subirNotificacao(porcupine = true)
+            subirNotificacao(MotorWake.PORCUPINE)
+            motorAtual = MotorWake.PORCUPINE
             true
         } catch (e: Exception) {
             Log.w("WakeWord", "Porcupine não inicializado: ${e.message}")
@@ -130,20 +156,62 @@ class WakeWordService : LifecycleService() {
         escuta?.iniciar()
     }
 
+    private fun pausarMotores() {
+        escuta?.parar()
+        vosk?.parar()
+        try {
+            manager?.stop()
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun retomarMotores() {
+        when (motorAtual) {
+            MotorWake.PORCUPINE -> try {
+                manager?.start()
+            } catch (e: Exception) {
+                iniciarFallback()
+            }
+            MotorWake.VOSK -> {
+                if (vosk == null) vosk = VoskSocorroDetector(this) { abrirConfirmacao() }
+                if (vosk?.iniciar() != true) iniciarFallback()
+            }
+            MotorWake.ESCUTA -> iniciarFallback()
+        }
+    }
+
+    private fun pararMotores() {
+        escuta?.parar()
+        escuta = null
+        vosk?.parar()
+        vosk = null
+        try {
+            manager?.stop()
+            manager?.delete()
+        } catch (_: Exception) {
+        }
+        manager = null
+    }
+
     private fun abrirConfirmacao() {
         if (confirmacaoAberta) return
         val agora = SystemClock.elapsedRealtime()
-        when (gate.aoDetectar(agora)) {
-            AcaoWake.NADA -> return
-            AcaoWake.DISPARAR_SOS -> abrirDisparoDireto()
-            AcaoWake.PERGUNTAR -> abrirConfirmacaoComPergunta()
-            AcaoWake.CANCELAR -> {}
+        if (gate.modoDireto) {
+            when (gate.aoDetectar(agora)) {
+                AcaoWake.DISPARAR_SOS -> abrirDisparoDireto()
+                else -> {}
+            }
+            return
         }
+        if (agora - ultimoWakeMs < 10_000) return
+        ultimoWakeMs = agora
+        abrirConfirmacaoComPergunta()
     }
 
     private fun abrirConfirmacaoComPergunta() {
         if (confirmacaoAberta) return
         confirmacaoAberta = true
+        pausarMotores()
         val i = Intent(this, SosActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             .putExtra("VIA_WAKE_WORD", true)
@@ -151,6 +219,7 @@ class WakeWordService : LifecycleService() {
             startActivity(i)
         } catch (e: Exception) {
             confirmacaoAberta = false
+            retomarMotores()
             Log.w("WakeWord", "não abriu a confirmação: ${e.message}")
         }
     }
@@ -158,6 +227,7 @@ class WakeWordService : LifecycleService() {
     private fun abrirDisparoDireto() {
         if (confirmacaoAberta) return
         confirmacaoAberta = true
+        pausarMotores()
         val i = Intent(this, SosActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             .putExtra("VIA_WAKE_DIRETO", true)
@@ -165,18 +235,13 @@ class WakeWordService : LifecycleService() {
             startActivity(i)
         } catch (e: Exception) {
             confirmacaoAberta = false
+            retomarMotores()
             Log.w("WakeWord", "não abriu SOS direto: ${e.message}")
         }
     }
 
     override fun onDestroy() {
-        try {
-            manager?.stop()
-            manager?.delete()
-        } catch (e: Exception) {
-            Log.w("WakeWord", "erro ao liberar Porcupine: ${e.message}")
-        }
-        escuta?.parar()
+        pararMotores()
         if (emExecucao == this) emExecucao = null
         super.onDestroy()
     }
