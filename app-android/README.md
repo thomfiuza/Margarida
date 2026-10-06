@@ -6,7 +6,7 @@ Especificação completa: `../monitor-idoso/especificacao_android.md`.
 
 ```
 core/    Kotlin/JVM PURO — regras clínicas, SOS, diário, JSON.
-         COMPILADO E TESTADO (kotlinc 2.0.21 + JVM 17): 13/13.
+         COMPILADO E TESTADO (kotlinc 2.0.21 + JVM 17): 26/26.
          O mesmo contrato de Evento do protótipo Python (mesmo JSONL).
 app/     Casca Android — Activities, wake word, gateways de chamada/SMS.
          Escrito, mas NÃO COMPILADO aqui (sandbox sem Android SDK/emulador).
@@ -18,13 +18,13 @@ app/     Casca Android — Activities, wake word, gateways de chamada/SMS.
 ```bash
 # sem Gradle, direto no kotlinc (foi assim que foi validado aqui):
 kotlinc core/src/main/kotlin/*.kt core/src/test/kotlin/TestesCore.kt -include-runtime -d core-testes.jar
-java -Dfile.encoding=UTF-8 -jar core-testes.jar     # 5/5
+java -Dfile.encoding=UTF-8 -jar core-testes.jar     # 26/26
 ```
 
 ## Abrir no Android Studio (para gerar o APK)
 
 1. Abrir a pasta `app-android/` (o Studio cria o wrapper Gradle no primeiro sync).
-2. Sync → rodar em um aparelho Android 8+.
+2. Sync → rodar em um aparelho Android 8+ (checklist de fumo: `FUMO_APK.md`).
 3. Wake word: criar AccessKey gratuita em console.picovoice.ai, treinar
    "socorro" (pt), colocar o `.ppn` em `app/src/main/assets/` e colar a chave
    em `WakeWordService.kt` (instruções no arquivo).
@@ -35,7 +35,7 @@ java -Dfile.encoding=UTF-8 -jar core-testes.jar     # 5/5
 
 | Item | Estado |
 |---|---|
-| `core/` (SOS + regras + diário + JSON + ponte + pad) | ✅ compilado e 13/13 testes JVM |
+| `core/` (SOS + regras + diário + JSON + ponte + pad + comunidade) | ✅ compilado e 26/26 testes JVM |
 | Paridade core Kotlin ↔ protótipo Python | ✅ textos e limiares idênticos; testes espelhados |
 | `app/` (Activities, manifest, Gradle, serviços) | ✅ compilado no PC do usuário (BUILD SUCCESSFUL, AGP 8.5 + Gradle 8.10 + JDK 17) |
 | SOS em aparelho real (S23) | ✅ 28/09/2026: 2 ligações sequenciais + SMS com mapa, tela estável |
