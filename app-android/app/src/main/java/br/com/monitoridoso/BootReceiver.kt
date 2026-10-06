@@ -4,10 +4,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 
-/** Reagenda lembrete + inatividade após reiniciar o celular. */
+/** Reagenda lembrete + wake word após reiniciar o celular (se cadastro ok). */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent?) {
         if (intent?.action != Intent.ACTION_BOOT_COMPLETED) return
-        if (PerfilStore(ctx).configurado()) RotinaNotificacoesScheduler.agendar(ctx)
+        val store = PerfilStore(ctx)
+        if (!store.configurado()) return
+        RotinaNotificacoesScheduler.agendar(ctx)
+        WakeWordLauncher.tentarIniciar(ctx)
     }
 }

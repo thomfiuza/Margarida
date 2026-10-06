@@ -75,10 +75,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun iniciarWake() {
-        try {
-            startForegroundService(Intent(this, WakeWordService::class.java))
-        } catch (e: Exception) {
-            android.util.Log.w("Margarida", "wake word indisponível: ${e.message}")
-        }
+        WakeWordLauncher.tentarIniciar(this)
     }
 }
