@@ -30,7 +30,7 @@ Quiser pegar uma tarefa? Abra um PR a partir da branch `dev` (staging). A `main`
 - [x] Rotina por voz dentro do APK (Estação 7 — `RotinaVozActivity` + `MaquinaRotina`)
 - [ ] Sensores de casa Matter/Tuya (radar de queda, porta, gás)
 - [ ] Piloto casal de idosos em que um cuida do outro (cenário clássico do SOS + diário)
-- [ ] Pad noturno BCG (hardware v2)
+- [ ] Pad noturno BCG (hardware v2) — a especificação v1 do nó de leito já está em `hardware/` (BOM, circuito, firmware, protocolo MQTT, teste de qualidade e simulador que roda o firmware no PC). Falta o que só leito real dá: validar com pessoa idosa deitada, depois de anuência assinada
 - [ ] Piloto com cuidadores (CEP)
 
 ## 🤝 Perfis que chegaram junto (papéis, sem dados pessoais)
