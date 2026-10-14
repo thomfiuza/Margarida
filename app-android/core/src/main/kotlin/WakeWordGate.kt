@@ -62,7 +62,15 @@ class WakeWordGate(
     }
 
     companion object {
-        private val SIM = setOf("sim", "yes", "ajuda", "socorro", "podes")
+        // As variantes de pronúncia de "socorro" têm que estar aqui.
+        // O reconhecedor transcreve "socorro" como "socoro" ou "socorre"
+        // com frequência, e sem elas o idoso que repete o pedido na
+        // confirmação tinha o socorro CANCELADO.
+        private val SIM = setOf(
+            "sim", "yes", "ajuda", "podes",
+            "socorro", "socorre", "socoro",
+            "confirmo", "confirma", "emergencia"
+        )
         private val NAO = setOf("nao", "não", "cancela", "cancelar", "para", "pare", "engano", "nada")
 
         fun pareceSim(t: String): Boolean {

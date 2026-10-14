@@ -23,7 +23,7 @@ Quiser pegar uma tarefa? Abra um PR a partir da branch `dev` (staging). A `main`
 
 ## 🔨 Próximos passos (virar issues)
 
-- [ ] Wake word "socorro" com motor open source (Vosk pt-BR spike no app; bateria a validar no S23)
+- [ ] Wake word "socorro" com motor open source (Vosk pt-BR no app; a gramática reduzida já está implementada em `core/WakeWord.kt` com teste na JVM, falta medir a bateria no S23 nos dois modos)
 - [x] Intent/deep link Android para o SOS parceiro (`margarida://sos?origem=...`)
 - [ ] Avaliar Kotlin Multiplatform para o núcleo rodar também no iOS (interesse real: idosos com iPhone)
 - [ ] IA on-device: intenções de voz mais espertas e resumos melhores, sempre sem nuvem
