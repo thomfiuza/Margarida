@@ -78,7 +78,7 @@ class VoskSocorroDetector(
         val g = gramatica
         if (g != null) {
             try {
-                val r = Recognizer(m, SAMPLE_RATE, g)
+                val r = Recognizer(m, SAMPLE_RATE.toFloat(), g)
                 comGramatica = true
                 Log.i(TAG, "Vosk em GRAMATICA (${g.count { it == ',' } + 1} palavras)")
                 return r
@@ -88,7 +88,7 @@ class VoskSocorroDetector(
         }
         comGramatica = false
         Log.i(TAG, "Vosk em DITADO livre")
-        return Recognizer(m, SAMPLE_RATE)
+        return Recognizer(m, SAMPLE_RATE.toFloat())
     }
 
     fun parar() {
@@ -170,7 +170,7 @@ class VoskSocorroDetector(
 
     companion object {
         private const val TAG = "VoskWake"
-        private const val SAMPLE_RATE = 16_000f
+        private const val SAMPLE_RATE = 16_000
 
         /**
          * Gramática para usar DEPOIS que a wake word acorda o app, na janela de
