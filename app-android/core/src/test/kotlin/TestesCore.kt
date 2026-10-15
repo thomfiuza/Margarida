@@ -370,6 +370,69 @@ private fun testWakeWordSocorroEConfirmacao() {
     println("  wake word socorro + 10 s sem 'não' dispara ✔")
 }
 
+private fun testGramaticaReduzidaVosk() {
+    val wake = gramaticaVoskWake()
+
+    // o formato que o Vosk espera: array JSON de strings, com [unk] no fim
+    check(wake.startsWith("[\"")) { "gramatica tem que abrir com [\"" }
+    check(wake.endsWith("\"]")) { "gramatica tem que fechar com \"]" }
+    check("\"$VOSK_DESCONHECIDO\"" in wake) { "sem [unk] o Vosk força falso positivo" }
+    check(wake.count { it == ',' } == VOCAB_WAKE_SOCORRO.size) {
+        "esperava ${VOCAB_WAKE_SOCORRO.size} palavras no 24/7"
+    }
+
+    // nenhuma palavra repetida nos três níveis
+    for (v in listOf(VOCAB_WAKE_SOCORRO, VOCAB_CONFIRMACAO, VOCAB_EMERGENCIA)) {
+        val limpos = v.map { normalizarFala(it) }.filter { it.isNotEmpty() }
+        check(limpos.size == limpos.distinct().size) { "vocabulario com palavra repetida" }
+    }
+
+    // o 24/7 é subconjunto do pós-wake: o que acorda o app tem que continuar
+    // funcionando depois que ele acordou
+    for (w in VOCAB_WAKE_SOCORRO) {
+        check(w in VOCAB_POS_WAKE) { "'$w' some do vocabulario depois do wake" }
+    }
+
+    // gramática não pode levar acento nem maiúscula: o Vosk não casa
+    for (v in listOf(VOCAB_WAKE_SOCORRO, VOCAB_CONFIRMACAO, VOCAB_EMERGENCIA)) {
+        for (w in v) {
+            check(w == normalizarFala(w)) { "'$w' tem acento ou maiuscula" }
+        }
+    }
+
+    // ACORDO entre o vocabulário e o filtro de wake word: tudo que a gramática
+    // pode emitir como pedido de socorro tem que ser reconhecido como tal
+    for (w in VOCAB_WAKE_SOCORRO) {
+        check(ehWakeWordSocorro(w)) { "'$w' esta na gramatica mas o filtro nao pega" }
+        check(temPalavraDoVocabulario(w, VOCAB_WAKE_SOCORRO)) { "'$w' nao casa com o proprio vocabulario" }
+    }
+    check(!ehWakeWordSocorro(VOSK_DESCONHECIDO)) { "[unk] nao pode disparar nada" }
+    check(!temPalavraDoVocabulario(VOSK_DESCONHECIDO, VOCAB_WAKE_SOCORRO)) { "[unk] nao pode casar" }
+
+    // O TESTE CARO: cada frase que a gramática deixa passar tem que produzir
+    // uma ação coerente. Uma frase de emergência que cai em OUTRA vira
+    // CANCELAR no WakeWordGate, e o idoso que pediu ajuda fica sem ajuda.
+    for (f in VOCAB_POS_WAKE) {
+        val acao = WakeWordGate(modoDireto = false).let { g ->
+            g.aoDetectar(0)
+            g.aoResponder(f, 1_000)
+        }
+        val ehNegacao = normalizarFala(f) in
+            setOf("nao", "cancela", "cancelar", "engano", "para", "pare")
+        if (ehNegacao) {
+            check(acao == AcaoWake.CANCELAR) { "'$f' devia cancelar e deu $acao" }
+        } else {
+            check(acao == AcaoWake.DISPARAR_SOS) {
+                "'$f' esta na gramatica mas NAO dispara o SOS (deu $acao): " +
+                    "o idoso diz isso e fica sem ajuda"
+            }
+        }
+    }
+
+    println("  gramatica Vosk: ${VOCAB_WAKE_SOCORRO.size} palavras no 24/7, " +
+        "${VOCAB_POS_WAKE.size} no pos-wake, todas as ${VOCAB_POS_WAKE.size} coerentes OK")
+}
+
 private fun testPonteTuyaMatter() {
     val queda = normalizarEventoSensor(
         """{"protocolo":"tuya","papel":"radar","hora":15,"token":"abc","status":[{"code":"fall_state","value":"fall"},{"code":"motionless_time","value":30}]}""",
@@ -468,6 +531,7 @@ fun main() {
         "testResumoSemana" to ::testResumoSemana,
         "testTendenciasRotina" to ::testTendenciasRotina,
         "testWakeWordSocorroEConfirmacao" to ::testWakeWordSocorroEConfirmacao,
+        "testGramaticaReduzidaVosk" to ::testGramaticaReduzidaVosk,
         "testPonteTuyaMatter" to ::testPonteTuyaMatter,
         "testQuadroPadBcg" to ::testQuadroPadBcg,
         "testFalasRotina" to ::testFalasRotina
