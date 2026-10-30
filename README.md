@@ -20,8 +20,9 @@ desenvolvimento).
 | Rotina por voz: FC pela câmera (rPPG), ortostática sentada→pé, urina com cartão de cor | `monitor-idoso/` (Python) | ✅ 17/17 testes |
 | Regras de sensores de casa (radar de queda estilo FALLR1, gás, porta, remédio) e inatividade da manhã | `monitor-idoso/sensores.py` + `app-android/core` | ✅ testado nas duas linguagens |
 | Noite: FC/FR sob o colchão (BCG) + saída do leito | `monitor-idoso/bcg_noturno.py` | ✅ DSP testado (hardware = v2) |
-| Núcleo de negócio do app (diário de eventos, regras, contratos JSON) | `app-android/core/` (Kotlin/JVM) | ✅ 26/26 testes JVM |
-| Interoperabilidade: SOS embutido em apps parceiros confiáveis + resumo semanal local pro cuidador | `app-android/core/` (Integracao.kt, ResumoDiario.kt) | ✅ 26/26 testes JVM |
+| Nó de leito: peso e respiração sob o colchão, MQTT local, painel do posto | `hardware/` (ESP32/Arduino) | 🔨 especificação completa + firmware validado em simulação; **não testado em leito real** |
+| Núcleo de negócio do app (diário de eventos, regras, contratos JSON) | `app-android/core/` (Kotlin/JVM) | ✅ 27/27 testes JVM |
+| Interoperabilidade: SOS embutido em apps parceiros confiáveis + resumo semanal local pro cuidador | `app-android/core/` (Integracao.kt, ResumoDiario.kt) | ✅ 27/27 testes JVM |
 
 ## Rodar os testes
 
@@ -31,8 +32,18 @@ cd monitor-idoso && python3 verificar_tudo.py     # 19/19 itens
 
 # Núcleo Kotlin (qualquer JDK 11+ e kotlinc)
 cd app-android && kotlinc core/src/main/kotlin/*.kt core/src/test/kotlin/TestesCore.kt \
-    -include-runtime -d core-testes.jar && java -jar core-testes.jar   # 26/26
+    -include-runtime -d core-testes.jar && java -jar core-testes.jar   # 27/27
 ```
+
+## Testar o firmware do leito sem placa
+
+```bash
+python3 hardware/bancada/rodar_testes.py     # 4/4 cenários
+```
+
+Compila o `.ino` num PC com `g++`, alimenta com uma série de peso sintética e
+confere os tempos de alerta e o cálculo de respiração. Não precisa de ESP32,
+célula de carga nem peso real. Veja `hardware/README.md`.
 
 ## Compilar o app
 
@@ -47,15 +58,17 @@ completo em português leigo.
 - `monitor-idoso/margarida_mapa_mundial.md` — pesquisa mundial de detecção de
   queda e sensores replicáveis;
 - `monitor-idoso/piloto_cuidadores.md` — plano de piloto com cuidadores (CEP);
-- `identidade/` — logo, paleta e voz da marca.
+- `identidade/` — logo, paleta e voz da marca;
+- `hardware/` — nó de leito: lista de componentes, circuito, firmware, protocolo
+  MQTT, teste de qualidade e simulador.
 
 ## Roadmap
 
 1. ✅ MVP SOS (testado em aparelho real);
-2. 🔨 Wake word "socorro" (Porcupine pt-BR);
+2. 🔨 Wake word "socorro": Vosk pt-BR com ditado livre e com gramática reduzida, medindo no S23 qual cabe no 24/7;
 3. 🔨 Rotina por voz dentro do APK;
 4. 🔨 Integração de sensores Matter/Tuya (radar de queda, porta, gás);
-5. 🔲 Pad noturno BCG (hardware próprio);
+5. 🔨 Nó de leito: especificação publicada em `hardware/`, falta validação em leito real;
 6. 🔲 Piloto com cuidadores + validação.
 
 ## Licença
